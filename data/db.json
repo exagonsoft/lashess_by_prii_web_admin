@@ -1,0 +1,18 @@
+{
+  "services": [
+    {
+      "id": "0e73b2c1-b882-4606-bece-fd36d9cc7e04",
+      "name": "Clásicas",
+      "price": 45,
+      "durationMin": 90,
+      "active": true
+    },
+    {
+      "id": "ab58bce7-2a96-43e9-ae10-be75bf0fd536",
+      "name": "Híbridas",
+      "price": 60,
+      "durationMin": 105,
+      "active": true
+    }
+  ]
+}

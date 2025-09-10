@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Smooth scroll for anchor links */
+html { scroll-behavior: smooth; }
+
+/* Subtle selection color */
+::selection { background: #fce7f3; color: #111; }

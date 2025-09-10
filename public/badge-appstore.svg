@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="56" viewBox="0 0 180 56" fill="none">
+  <rect width="180" height="56" rx="12" fill="#111"/>
+  <g transform="translate(14,12)">
+    <path d="M10 10c2-2 4-3 6-3-1 2-2 4-4 5 0 2 2 3 3 4-2 1-4 1-5 0-2-1-3-3-3-5 0-1 1-2 3-1z" fill="#fff"/>
+    <text x="30" y="12" font-family="Inter, Arial" font-size="9" fill="#fff" opacity=".85">Descárgala en</text>
+    <text x="30" y="28" font-family="Inter, Arial" font-size="16" fill="#fff" font-weight="600">App Store</text>
+  </g>
+</svg>
