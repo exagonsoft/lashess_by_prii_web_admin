@@ -18,22 +18,19 @@ import DeleteOutline from "@mui/icons-material/DeleteOutline";
 import EditOutlined from "@mui/icons-material/EditOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
-import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid"; // ✅ removed GridValueFormatterParams
+import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import DataTable from "@/app/components/admin/DataTable";
 import ConfirmDialog from "@/app/components/admin/ConfirmDialog";
+import Image from "next/image";
+import ImageUploader from "@/app/components/ui/ImageUploader";
+import { IService } from "@/lib/interfaces/types";
 
-type Service = {
-  id: string;
-  name: string;
-  price: number;
-  durationMin: number;
-  active: boolean;
-};
+const API_BASE = "/api/v1/private/services";
 
 export default function ServicesPage() {
-  const [rows, setRows] = React.useState<Service[]>([]);
+  const [rows, setRows] = React.useState<IService[]>([]);
   const [open, setOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<Service | null>(null);
+  const [editing, setEditing] = React.useState<IService | null>(null);
   const [toast, setToast] = React.useState<{
     open: boolean;
     msg: string;
@@ -44,21 +41,17 @@ export default function ServicesPage() {
     open: false,
   });
 
+  const showToast = (msg: string, type: "success" | "error") =>
+    setToast({ open: true, msg, type });
+
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/services", { cache: "no-store" });
-      if (res.ok) {
-        setRows(await res.json());
-      } else {
-        setToast({
-          open: true,
-          msg: "Error cargando servicios",
-          type: "error",
-        });
-      }
+      const res = await fetch(API_BASE, { cache: "no-store" });
+      if (!res.ok) throw new Error();
+      setRows(await res.json());
     } catch {
-      setToast({ open: true, msg: "Error de red", type: "error" });
+      showToast("Error cargando servicios", "error");
     } finally {
       setLoading(false);
     }
@@ -71,48 +64,49 @@ export default function ServicesPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const payload = {
+    const payload: Partial<IService> = {
       name: String(form.get("name") || ""),
       price: Number(form.get("price") || 0),
       durationMin: Number(form.get("durationMin") || 60),
-      active: true,
+      active: editing?.active ?? true,
+      imageUrl: String(form.get("imageUrl") || ""),
+      order: Number(form.get("order") || 0),
     };
 
     try {
       const res = await fetch(
-        editing ? `/api/v1/services/${editing.id}` : "/api/v1/services",
+        editing ? `${API_BASE}/${editing.id}` : API_BASE,
         {
           method: editing ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
-
       if (!res.ok) throw new Error();
 
-      setToast({ open: true, msg: "Guardado", type: "success" });
+      showToast("Guardado", "success");
       setOpen(false);
       setEditing(null);
       await load();
     } catch {
-      setToast({ open: true, msg: "Error guardando", type: "error" });
+      showToast("Error guardando", "error");
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/v1/services/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       await load();
-      setToast({ open: true, msg: "Eliminado", type: "success" });
+      showToast("Eliminado", "success");
     } catch {
-      setToast({ open: true, msg: "Error eliminando", type: "error" });
+      showToast("Error eliminando", "error");
     }
   };
 
-  const toggleActive = async (s: Service) => {
+  const toggleActive = async (s: IService) => {
     try {
-      const res = await fetch(`/api/v1/services/${s.id}`, {
+      const res = await fetch(`${API_BASE}/${s.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !s.active }),
@@ -120,7 +114,7 @@ export default function ServicesPage() {
       if (!res.ok) throw new Error();
       await load();
     } catch {
-      setToast({ open: true, msg: "Error cambiando estado", type: "error" });
+      showToast("Error cambiando estado", "error");
     }
   };
 
@@ -129,6 +123,7 @@ export default function ServicesPage() {
       <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
         Servicios
       </Typography>
+
       <Stack
         direction="row"
         alignItems="center"
@@ -149,69 +144,93 @@ export default function ServicesPage() {
         </Button>
       </Stack>
 
-      <DataTable<Service>
+      <DataTable<IService>
         rows={rows}
         loading={loading}
         height={560}
-        columns={[
-          { field: "name", headerName: "Nombre", flex: 1 },
-          {
-            field: "price",
-            headerName: "Precio",
-            width: 120,
-            valueFormatter: (params: { value: number }) =>
-              `$${Number(params.value ?? 0).toFixed(2)}`, // ✅ no GridValueFormatterParams
-          },
-          { field: "durationMin", headerName: "Duración (min)", width: 150 },
-          {
-            field: "active",
-            headerName: "Estado",
-            width: 140,
-            renderCell: (p: GridRenderCellParams<Service>) => (
-              <Chip
-                size="small"
-                color={p.value ? "success" : "default"}
-                icon={p.value ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />}
-                label={p.value ? "Activo" : "Inactivo"}
-                onClick={() => toggleActive(p.row as Service)}
-                variant={p.value ? "filled" : "outlined"}
-              />
-            ),
-          },
-          {
-            field: "actions",
-            headerName: "Acciones",
-            width: 180,
-            sortable: false,
-            filterable: false,
-            renderCell: (p: GridRenderCellParams<Service, Service>) => (
-              <Stack direction="row" spacing={1}>
-                <Button
+        columns={
+          [
+            { field: "name", headerName: "Nombre", flex: 1 },
+            {
+              field: "price",
+              headerName: "Precio",
+              width: 120,
+              valueFormatter: (params: { value: number }) =>
+                `$${Number(params.value ?? 0).toFixed(2)}`,
+            },
+            { field: "durationMin", headerName: "Duración (min)", width: 150 },
+            { field: "order", headerName: "Orden", width: 100 },
+            {
+              field: "imageUrl",
+              headerName: "Imagen",
+              flex: 1,
+              renderCell: (p: GridRenderCellParams<IService>) =>
+                p.value ? (
+                  <Image
+                    src={p.value}
+                    alt="preview"
+                    width={50}
+                    height={50}
+                    style={{ width: 50, height: 50, borderRadius: 4 }}
+                  />
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Sin imagen
+                  </Typography>
+                ),
+            },
+            {
+              field: "active",
+              headerName: "Estado",
+              width: 140,
+              renderCell: (p: GridRenderCellParams<IService>) => (
+                <Chip
                   size="small"
-                  variant="text"
-                  onClick={() => {
-                    setEditing(p.row as Service);
-                    setOpen(true);
-                  }}
-                  startIcon={<EditOutlined />}
-                >
-                  Editar
-                </Button>
-                <Button
-                  size="small"
-                  variant="text"
-                  color="error"
-                  onClick={() =>
-                    setConfirm({ open: true, id: (p.row as Service).id })
+                  color={p.value ? "success" : "default"}
+                  icon={
+                    p.value ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />
                   }
-                  startIcon={<DeleteOutline />}
-                >
-                  Borrar
-                </Button>
-              </Stack>
-            ),
-          },
-        ] as GridColDef[]}
+                  label={p.value ? "Activo" : "Inactivo"}
+                  onClick={() => toggleActive(p.row as IService)}
+                  variant={p.value ? "filled" : "outlined"}
+                />
+              ),
+            },
+            {
+              field: "actions",
+              headerName: "Acciones",
+              width: 180,
+              sortable: false,
+              filterable: false,
+              renderCell: (p: GridRenderCellParams<IService, IService>) => (
+                <Stack direction="row" spacing={1} sx={{display: 'flex', justifyContent: 'center', width: '100%', alignItems: 'center', height: '100%'}}>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => {
+                      setEditing(p.row as IService);
+                      setOpen(true);
+                    }}
+                    startIcon={<EditOutlined />}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="text"
+                    color="error"
+                    onClick={() =>
+                      setConfirm({ open: true, id: (p.row as IService).id })
+                    }
+                    startIcon={<DeleteOutline />}
+                  >
+                    Borrar
+                  </Button>
+                </Stack>
+              ),
+            },
+          ] as GridColDef[]
+        }
       />
 
       <Dialog
@@ -220,7 +239,9 @@ export default function ServicesPage() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>{editing ? "Editar servicio" : "Nuevo servicio"}</DialogTitle>
+        <DialogTitle>
+          {editing ? "Editar servicio" : "Nuevo servicio"}
+        </DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent sx={{ display: "grid", gap: 2 }}>
             <TextField
@@ -242,6 +263,28 @@ export default function ServicesPage() {
               label="Duración (min)"
               defaultValue={editing?.durationMin ?? 60}
               required
+            />
+            <TextField
+              name="order"
+              type="number"
+              label="Orden"
+              defaultValue={editing?.order ?? 0}
+            />
+            <ImageUploader
+              label="Imagen"
+              value={editing?.imageUrl || ""}
+              onChange={(url) => {
+                // Put uploaded URL in hidden input so it gets into form
+                const hidden =
+                  document.querySelector<HTMLInputElement>("#imageUrl");
+                if (hidden) hidden.value = url || "";
+              }}
+            />
+            <input
+              type="hidden"
+              id="imageUrl"
+              name="imageUrl"
+              defaultValue={editing?.imageUrl || ""}
             />
           </DialogContent>
           <DialogActions>
