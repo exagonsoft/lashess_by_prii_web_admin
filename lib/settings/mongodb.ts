@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 
-const uri = process.env.MONGODB_URI as string;
+const uri = process.env.MONGODB_URI || "mongodb+srv://admin:NNLDUhSHvIuAahI0@lasheesbypriidb.cgsp3qp.mongodb.net/";
 if (!uri) {
   // Keep strict: do not hardcode secrets. Ask user to set MONGODB_URI.
   throw new Error("Missing MONGODB_URI env var. Add it to .env.local");
