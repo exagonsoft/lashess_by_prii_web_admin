@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import Image from "next/image";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,12 @@ export const metadata: Metadata = {
     url: "https://lashess-by-prii.com",
     siteName: "Lashess By Prii",
     images: [
-      { url: "/og-banner.png", width: 1200, height: 630, alt: "Lashess By Prii" },
+      {
+        url: "/og-banner.png",
+        width: 1200,
+        height: 630,
+        alt: "Lashess By Prii",
+      },
     ],
     locale: "es_ES",
     type: "website",
@@ -45,7 +51,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          <div className="absolute inset-0 -z-10">
+            <Image
+              src="/hero-pattern.svg"
+              alt=""
+              fill
+              priority
+              className="object-cover opacity-20 dark:opacity-30 bg-repeat-y"
+            />
+          </div>
+          {children}
+        </Providers>
       </body>
     </html>
   );

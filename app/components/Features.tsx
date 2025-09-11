@@ -29,7 +29,7 @@ export default function Features() {
     { icon: <CleanHandsIcon fontSize="small" />, title: "Studio higiénico", desc: "Protocolos de limpieza y desinfección certificados." },
   ];
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-20 grid gap-6 md:grid-cols-4">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-52 grid gap-6 md:grid-cols-4">
       {items.map((f) => (
         <FeatureCard key={f.title} icon={f.icon} title={f.title} desc={f.desc} />
       ))}

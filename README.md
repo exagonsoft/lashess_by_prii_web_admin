@@ -88,8 +88,8 @@ NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 ```ini
 DJANGO_SECRET_KEY=your_django_secret_key
 DATABASE_URL=postgres://your_db_credentials
-AWS_ACCESS_KEY_ID=your_aws_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret
+CLOUD_ACCESS_KEY_ID=your_aws_key
+CLOUD_SECRET_ACCESS_KEY=your_aws_secret
 ```
 
 ---
