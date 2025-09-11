@@ -15,39 +15,47 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lashess By Prii — Luxury Lash Salon & App",
+  title: "Lashess By Prii: Aplicación y Salón de Pestañas de Lujo",
   description:
-    "Premium eyelash extensions, lifts, and brow services. Book easily with our mobile app.",
-  metadataBase: new URL("https://lashess-by-prii.com"),
+    "Extensiones de pestañas, lifting y cejas premium. Reserva fácilmente con nuestra app móvil.",
+  metadataBase: new URL("https://lashees-by-prii.com"),
   icons: {
     icon: "/logo.svg",
   },
   openGraph: {
-    title: "Lashess By Prii",
+    title: "Lashess By Prii: Aplicación y Salón de Pestañas de Lujo",
     description:
-      "Premium eyelash services with effortless booking via our mobile app.",
-    url: "https://lashess-by-prii.com",
+      "Extensiones de pestañas, lifting y cejas premium. Reserva fácilmente con nuestra app móvil.",
+    url: "https://www.lashees-by-prii.exagon-soft.com/",
     siteName: "Lashess By Prii",
     images: [
       {
-        url: "/grafic-function.png",
+        url: "https://www.lashees-by-prii.exagon-soft.com/grafic-function.png", // full URL required
         width: 1200,
-        height: 630,
+        height: 628,
         alt: "Lashess By Prii",
       },
     ],
     locale: "es_ES",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Lashess By Prii: Aplicación y Salón de Pestañas de Lujo",
+    description:
+      "Extensiones de pestañas, lifting y cejas premium. Reserva fácilmente con nuestra app móvil.",
+    site: "@lashessbyprii", // optional, your Twitter handle
+    images: ["https://www.lashees-by-prii.exagon-soft.com/grafic-function.png"],
+  },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
