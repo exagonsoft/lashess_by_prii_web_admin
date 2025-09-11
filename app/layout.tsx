@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     siteName: "Lashess By Prii",
     images: [
       {
-        url: "/og-banner.png",
+        url: "/grafic-function.png",
         width: 1200,
         height: 630,
         alt: "Lashess By Prii",
