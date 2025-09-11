@@ -1,22 +1,37 @@
+"use client";
+import { useEffect, useState } from "react";
 import ServiceCard from "@/app/components/ServiceCard";
 import SectionWrapper from "@/app/components/landing/SectionWrapper";
 import { IService } from "@/lib/interfaces/types";
-import { Key } from "react";
 
-async function getServices() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/public/services`, {
-    next: { revalidate: 60 }, // ISR: revalidate every 60s
-  });
+export default function Services() {
+  const [services, setServices] = useState<IService[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch services");
-  }
-
-  return res.json();
-}
-
-export default async function Services() {
-  const services = await getServices();
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        setLoading(true);
+        const res = await fetch(
+          `/api/v1/public/services`
+        );
+        if (!res.ok) throw new Error("Error cargando servicios");
+        const data = await res.json();
+        setServices(data);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error(err.message);
+        } else {
+          console.error(err);
+        }
+        setError("No se pudieron cargar los servicios.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchServices();
+  }, []);
 
   return (
     <SectionWrapper id="services">
@@ -28,10 +43,14 @@ export default async function Services() {
       </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-3">
-        {services.length > 0 ? (
-          services.map((s: IService, indx: Key | null | undefined) => (
+        {loading ? (
+          <p className="text-black/60 dark:text-white/60">Cargando servicios...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : services.length > 0 ? (
+          services.map((s: IService) => (
             <ServiceCard
-              key={indx}
+              key={s.id || s.name}
               name={s.name}
               price={s.price}
               image={s.imageUrl}
