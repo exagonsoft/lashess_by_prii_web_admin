@@ -4,39 +4,50 @@ import {
   Typography,
   Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Snackbar,
   Alert,
-  Chip,
   Stack,
+  TextField,
+  Chip,
 } from "@mui/material";
 import DeleteOutline from "@mui/icons-material/DeleteOutline";
 import EditOutlined from "@mui/icons-material/EditOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
-import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import DataTable from "@/app/components/admin/DataTable";
+import { GridColDef } from "@mui/x-data-grid";
 import ConfirmDialog from "@/app/components/admin/ConfirmDialog";
-import Image from "next/image";
+import CrudDialog from "@/app/components/ui/CustomDialog";
+import CrudTable from "@/app/components/ui/CustomTable";
 import ImageUploader from "@/app/components/ui/ImageUploader";
 import { IService } from "@/lib/interfaces/types";
+import ApiFetcher from "@/lib/utils/fetcher";
+import { useAuthToken } from "@/lib/hooks/useAuthToken";
+import Image from "next/image";
 
 const API_BASE = "/api/v1/private/services";
 
 export default function ServicesPage() {
+  const { token } = useAuthToken(); // 🔑 get token from context
+
   const [rows, setRows] = React.useState<IService[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<IService | null>(null);
-  const [toast, setToast] = React.useState<{
-    open: boolean;
-    msg: string;
-    type: "success" | "error";
-  }>({ open: false, msg: "", type: "success" });
-  const [loading, setLoading] = React.useState(true);
+  const [form, setForm] = React.useState<Partial<IService>>({
+    name: "",
+    price: 0,
+    durationMin: 60,
+    active: true,
+    order: 0,
+    imageUrl: "",
+  });
+
+  const [toast, setToast] = React.useState({
+    open: false,
+    msg: "",
+    type: "success" as "success" | "error",
+  });
   const [confirm, setConfirm] = React.useState<{ open: boolean; id?: string }>({
     open: false,
   });
@@ -45,48 +56,41 @@ export default function ServicesPage() {
     setToast({ open: true, msg, type });
 
   const load = React.useCallback(async () => {
+    if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch(API_BASE, { cache: "no-store" });
-      if (!res.ok) throw new Error();
-      setRows(await res.json());
+      const data = await ApiFetcher.get<IService[]>(API_BASE, token);
+      setRows(data);
     } catch {
       showToast("Error cargando servicios", "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   React.useEffect(() => {
     load();
   }, [load]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const payload: Partial<IService> = {
-      name: String(form.get("name") || ""),
-      price: Number(form.get("price") || 0),
-      durationMin: Number(form.get("durationMin") || 60),
-      active: editing?.active ?? true,
-      imageUrl: String(form.get("imageUrl") || ""),
-      order: Number(form.get("order") || 0),
-    };
-
+  const handleSave = async () => {
+    if (!token) return;
     try {
-      const res = await fetch(
-        editing ? `${API_BASE}/${editing.id}` : API_BASE,
-        {
-          method: editing ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-      if (!res.ok) throw new Error();
-
+      if (editing) {
+        await ApiFetcher.put(`${API_BASE}/${editing.id}`, form, token);
+      } else {
+        await ApiFetcher.post(API_BASE, form, token);
+      }
       showToast("Guardado", "success");
       setOpen(false);
       setEditing(null);
+      setForm({
+        name: "",
+        price: 0,
+        durationMin: 60,
+        active: true,
+        order: 0,
+        imageUrl: "",
+      });
       await load();
     } catch {
       showToast("Error guardando", "error");
@@ -94,9 +98,9 @@ export default function ServicesPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!token) return;
     try {
-      const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      await ApiFetcher.delete(`${API_BASE}/${id}`, token);
       await load();
       showToast("Eliminado", "success");
     } catch {
@@ -105,18 +109,104 @@ export default function ServicesPage() {
   };
 
   const toggleActive = async (s: IService) => {
+    if (!token) return;
     try {
-      const res = await fetch(`${API_BASE}/${s.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: !s.active }),
-      });
-      if (!res.ok) throw new Error();
+      await ApiFetcher.put(`${API_BASE}/${s.id}`, { active: !s.active }, token);
       await load();
     } catch {
       showToast("Error cambiando estado", "error");
     }
   };
+
+  const columns: GridColDef[] = [
+    { field: "name", headerName: "Nombre", flex: 1 },
+    {
+      field: "price",
+      headerName: "Precio",
+      width: 120,
+      valueFormatter: (v) => `$${Number(v ?? 0).toFixed(2)}`,
+    },
+    { field: "durationMin", headerName: "Duración (min)", width: 150 },
+    { field: "order", headerName: "Orden", width: 100 },
+    {
+      field: "imageUrl",
+      headerName: "Imagen",
+      flex: 1,
+      renderCell: (p) =>
+        p.value ? (
+          <Image
+            src={p.value}
+            alt="preview"
+            width={50}
+            height={50}
+            style={{ width: 50, height: 50, borderRadius: 4 }}
+          />
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            Sin imagen
+          </Typography>
+        ),
+    },
+    {
+      field: "active",
+      headerName: "Estado",
+      width: 140,
+      renderCell: (p) => (
+        <Chip
+          size="small"
+          color={p.value ? "success" : "default"}
+          icon={p.value ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />}
+          label={p.value ? "Activo" : "Inactivo"}
+          onClick={() => toggleActive(p.row as IService)}
+          variant={p.value ? "filled" : "outlined"}
+        />
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Acciones",
+      width: 180,
+      sortable: false,
+      filterable: false,
+      renderCell: (p) => (
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
+          <Button
+            size="small"
+            variant="text"
+            onClick={() => {
+              setEditing(p.row as IService);
+              setForm(p.row as IService);
+              setOpen(true);
+            }}
+            startIcon={<EditOutlined />}
+          >
+            Editar
+          </Button>
+          <Button
+            size="small"
+            variant="text"
+            color="error"
+            onClick={() =>
+              setConfirm({ open: true, id: (p.row as IService).id })
+            }
+            startIcon={<DeleteOutline />}
+          >
+            Borrar
+          </Button>
+        </Stack>
+      ),
+    },
+  ];
 
   return (
     <Box>
@@ -137,6 +227,14 @@ export default function ServicesPage() {
           variant="contained"
           onClick={() => {
             setEditing(null);
+            setForm({
+              name: "",
+              price: 0,
+              durationMin: 60,
+              active: true,
+              order: 0,
+              imageUrl: "",
+            });
             setOpen(true);
           }}
         >
@@ -144,164 +242,53 @@ export default function ServicesPage() {
         </Button>
       </Stack>
 
-      <DataTable<IService>
-        rows={rows}
-        loading={loading}
-        height={560}
-        columns={
-          [
-            { field: "name", headerName: "Nombre", flex: 1 },
-            {
-              field: "price",
-              headerName: "Precio",
-              width: 120,
-              valueFormatter: (params: { value: number }) =>
-                `$${Number(params.value ?? 0).toFixed(2)}`,
-            },
-            { field: "durationMin", headerName: "Duración (min)", width: 150 },
-            { field: "order", headerName: "Orden", width: 100 },
-            {
-              field: "imageUrl",
-              headerName: "Imagen",
-              flex: 1,
-              renderCell: (p: GridRenderCellParams<IService>) =>
-                p.value ? (
-                  <Image
-                    src={p.value}
-                    alt="preview"
-                    width={50}
-                    height={50}
-                    style={{ width: 50, height: 50, borderRadius: 4 }}
-                  />
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    Sin imagen
-                  </Typography>
-                ),
-            },
-            {
-              field: "active",
-              headerName: "Estado",
-              width: 140,
-              renderCell: (p: GridRenderCellParams<IService>) => (
-                <Chip
-                  size="small"
-                  color={p.value ? "success" : "default"}
-                  icon={
-                    p.value ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />
-                  }
-                  label={p.value ? "Activo" : "Inactivo"}
-                  onClick={() => toggleActive(p.row as IService)}
-                  variant={p.value ? "filled" : "outlined"}
-                />
-              ),
-            },
-            {
-              field: "actions",
-              headerName: "Acciones",
-              width: 180,
-              sortable: false,
-              filterable: false,
-              renderCell: (p: GridRenderCellParams<IService, IService>) => (
-                <Stack direction="row" spacing={1} sx={{display: 'flex', justifyContent: 'center', width: '100%', alignItems: 'center', height: '100%'}}>
-                  <Button
-                    size="small"
-                    variant="text"
-                    onClick={() => {
-                      setEditing(p.row as IService);
-                      setOpen(true);
-                    }}
-                    startIcon={<EditOutlined />}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="text"
-                    color="error"
-                    onClick={() =>
-                      setConfirm({ open: true, id: (p.row as IService).id })
-                    }
-                    startIcon={<DeleteOutline />}
-                  >
-                    Borrar
-                  </Button>
-                </Stack>
-              ),
-            },
-          ] as GridColDef[]
-        }
-      />
+      <CrudTable<IService> rows={rows} loading={loading} columns={columns} />
 
-      <Dialog
+      <CrudDialog
         open={open}
+        title={editing ? "Editar servicio" : "Nuevo servicio"}
         onClose={() => setOpen(false)}
-        fullWidth
-        maxWidth="sm"
+        onSave={handleSave}
       >
-        <DialogTitle>
-          {editing ? "Editar servicio" : "Nuevo servicio"}
-        </DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent sx={{ display: "grid", gap: 2 }}>
-            <TextField
-              name="name"
-              label="Nombre"
-              defaultValue={editing?.name || ""}
-              required
-            />
-            <TextField
-              name="price"
-              type="number"
-              label="Precio"
-              defaultValue={editing?.price ?? 0}
-              required
-            />
-            <TextField
-              name="durationMin"
-              type="number"
-              label="Duración (min)"
-              defaultValue={editing?.durationMin ?? 60}
-              required
-            />
-            <TextField
-              name="order"
-              type="number"
-              label="Orden"
-              defaultValue={editing?.order ?? 0}
-            />
-            <ImageUploader
-              label="Imagen"
-              value={editing?.imageUrl || ""}
-              onChange={(url) => {
-                // Put uploaded URL in hidden input so it gets into form
-                const hidden =
-                  document.querySelector<HTMLInputElement>("#imageUrl");
-                if (hidden) hidden.value = url || "";
-              }}
-            />
-            <input
-              type="hidden"
-              id="imageUrl"
-              name="imageUrl"
-              defaultValue={editing?.imageUrl || ""}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button type="submit" variant="contained">
-              Guardar
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+        <TextField
+          label="Nombre"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          required
+        />
+        <TextField
+          type="number"
+          label="Precio"
+          value={form.price}
+          onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+          required
+        />
+        <TextField
+          type="number"
+          label="Duración (min)"
+          value={form.durationMin}
+          onChange={(e) =>
+            setForm({ ...form, durationMin: Number(e.target.value) })
+          }
+          required
+        />
+        <TextField
+          type="number"
+          label="Orden"
+          value={form.order}
+          onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
+        />
+        <ImageUploader
+          label="Imagen"
+          value={form.imageUrl || ""}
+          onChange={(url) => setForm({ ...form, imageUrl: url || "" })}
+        />
+      </CrudDialog>
 
       <Snackbar
         open={toast.open}
         autoHideDuration={2000}
-        onClose={(_, reason) => {
-          if (reason !== "clickaway") setToast({ ...toast, open: false });
-        }}
+        onClose={() => setToast({ ...toast, open: false })}
       >
         <Alert severity={toast.type} variant="filled">
           {toast.msg}
