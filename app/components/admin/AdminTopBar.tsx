@@ -7,14 +7,27 @@ import {
   Typography,
   IconButton,
   Avatar,
+  Button,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useRouter } from "next/navigation";
 
 type Props = {
   onMenuClick: () => void;
 };
 
 export default function AdminTopBar({ onMenuClick }: Props) {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/session", { method: "DELETE" });
+    } catch {}
+    try {
+      localStorage.removeItem("token");
+    } catch {}
+    router.push("/auth");
+  };
   return (
     <AppBar
       position="fixed"
@@ -35,7 +48,12 @@ export default function AdminTopBar({ onMenuClick }: Props) {
             Panel de administración
           </Typography>
         </Box>
-        <Avatar sx={{ width: 32, height: 32 }}>N</Avatar>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Button size="small" variant="outlined" onClick={handleLogout}>
+            Salir
+          </Button>
+          <Avatar sx={{ width: 32, height: 32 }}>N</Avatar>
+        </Box>
       </Toolbar>
     </AppBar>
   );

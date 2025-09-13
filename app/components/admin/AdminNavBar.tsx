@@ -31,7 +31,14 @@ export default function AdminNav({ nav, collapsed, onToggle }: Props) {
   const pathname = usePathname();
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100% - 60px)", position: "relative" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100% - 60px)",
+        position: "relative",
+      }}
+    >
       <List sx={{ flexGrow: 1, mt: 1 }}>
         {nav.map((n) => {
           const selected = pathname === n.href;
@@ -71,8 +78,13 @@ export default function AdminNav({ nav, collapsed, onToggle }: Props) {
       </List>
 
       <Divider />
-      <Box sx={{ p: 1, display: "flex", justifyContent: collapsed ? "center" : "flex-end"}}>
-        
+      <Box
+        sx={{
+          p: 1,
+          display: "flex",
+          justifyContent: collapsed ? "center" : "flex-end",
+        }}
+      >
         <IconButton onClick={onToggle} size="small">
           {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
         </IconButton>
