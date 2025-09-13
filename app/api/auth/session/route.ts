@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/lib/settings/firebaseAdmin";
+import { systemSecrets } from "@/lib/settings/systemSecrets";
 
 export const runtime = "nodejs";
 
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     res.cookies.set(cookieName, token, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: systemSecrets.isProd,
       path: "/",
       maxAge,
     });
@@ -55,7 +56,7 @@ export async function DELETE() {
   res.cookies.set(cookieName, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: systemSecrets.isProd,
     path: "/",
     maxAge: 0,
   });

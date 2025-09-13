@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { s3 } from "@/lib/settings/s3";
+import { systemSecrets } from "@/lib/settings/systemSecrets";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
 
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
     // Upload (⚡️ no ACL anymore)
     await s3.send(
       new PutObjectCommand({
-        Bucket: process.env.CLOUD_BUCKET!,
+        Bucket: systemSecrets.cloud.bucket,
         Key: key,
         Body: buffer,
         ContentType: file.type,
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     );
 
     // Public URL (if bucket policy allows public read)
-    const url = `https://${process.env.CLOUD_BUCKET}.s3.${process.env.CLOUD_REGION}.amazonaws.com/${key}`;
+    const url = `https://${systemSecrets.cloud.bucket}.s3.${systemSecrets.cloud.region}.amazonaws.com/${key}`;
 
     return NextResponse.json({ url });
   } catch (error) {

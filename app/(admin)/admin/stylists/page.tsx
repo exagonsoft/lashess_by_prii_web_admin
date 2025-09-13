@@ -17,9 +17,10 @@ import {
   DialogActions,
 } from "@mui/material";
 import { IStylist } from "@/lib/interfaces/types";
+import { systemSecrets } from "@/lib/settings/systemSecrets";
 import ImageUploader from "@/app/components/ui/ImageUploader"; // ✅ import your uploader
 
-const apiBase = process.env.NEXT_PUBLIC_API_BASE || "";
+const apiBase = systemSecrets.apiBase || "";
 
 export default function StylistsPage() {
   const [stylists, setStylists] = useState<IStylist[]>([]);

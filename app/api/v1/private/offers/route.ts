@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/settings/mongoose";
 import Offer from "@/lib/models/offer";
 import { requireAdmin } from "@/lib/utils/requireAdmin";
+import { sendTopicNotification } from "@/lib/settings/firebaseAdmin";
 
 export async function GET(req: Request) {
   const auth = await requireAdmin(req);
@@ -34,8 +35,23 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const auth = await requireAdmin(req);
   if (auth) return auth;
+
   await connectToDatabase();
   const body = await req.json();
   const created = await Offer.create(body);
+
+  try {
+    // 🎉 Send push to all subscribed to "offers" topic
+    await sendTopicNotification(
+      "offers",
+      "🎉 Nueva oferta disponible",
+      body.title || "Revisa las últimas promociones",
+      { route: `/offers/${created._id}` }
+    );
+  } catch (err) {
+    console.error("❌ Error sending push notification:", err);
+  }
+
   return NextResponse.json({ id: String(created._id) });
 }
+
