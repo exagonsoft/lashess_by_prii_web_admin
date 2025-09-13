@@ -1,6 +1,16 @@
 "use client";
 import * as React from "react";
-import { Typography, Stack, Button, Snackbar, Alert, TextField, Chip, Switch, FormControlLabel } from "@mui/material";
+import {
+  Typography,
+  Stack,
+  Button,
+  Snackbar,
+  Alert,
+  TextField,
+  Chip,
+  Switch,
+  FormControlLabel,
+} from "@mui/material";
 import CrudTable from "@/app/components/ui/CustomTable";
 import CrudDialog from "@/app/components/ui/CustomDialog";
 import ImageUploader from "@/app/components/ui/ImageUploader";
@@ -17,10 +27,21 @@ export default function OffersPage() {
   const [loading, setLoading] = React.useState(true);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<IOffer | null>(null);
-  const [form, setForm] = React.useState<Partial<IOffer>>({ title: "", description: "", imageUrl: "", active: true, order: 0 });
-  const [toast, setToast] = React.useState({ open: false, msg: "", type: "success" as "success" | "error" });
+  const [form, setForm] = React.useState<Partial<IOffer>>({
+    title: "",
+    description: "",
+    imageUrl: "",
+    active: true,
+    order: 0,
+  });
+  const [toast, setToast] = React.useState({
+    open: false,
+    msg: "",
+    type: "success" as "success" | "error",
+  });
 
-  const showToast = (m: string, t: "success" | "error") => setToast({ open: true, msg: m, type: t });
+  const showToast = (m: string, t: "success" | "error") =>
+    setToast({ open: true, msg: m, type: t });
 
   const load = React.useCallback(async () => {
     if (!token) return;
@@ -49,7 +70,13 @@ export default function OffersPage() {
       }
       setOpen(false);
       setEditing(null);
-      setForm({ title: "", description: "", imageUrl: "", active: true, order: 0 });
+      setForm({
+        title: "",
+        description: "",
+        imageUrl: "",
+        active: true,
+        order: 0,
+      });
       await load();
       showToast("Guardado", "success");
     } catch {
@@ -76,14 +103,30 @@ export default function OffersPage() {
       field: "active",
       headerName: "Activa",
       width: 120,
-      renderCell: (p) => <Chip size="small" label={p.value ? "Sí" : "No"} color={p.value ? "success" : "default"} />,
+      renderCell: (p) => (
+        <Chip
+          size="small"
+          label={p.value ? "Sí" : "No"}
+          color={p.value ? "success" : "default"}
+        />
+      ),
     },
     {
       field: "actions",
       headerName: "Acciones",
       width: 260,
       renderCell: (p) => (
-        <Stack direction="row" spacing={1}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
           <Button
             size="small"
             variant="outlined"
@@ -95,7 +138,12 @@ export default function OffersPage() {
           >
             Editar
           </Button>
-          <Button size="small" color="error" variant="text" onClick={() => handleDelete((p.row as IOffer).id)}>
+          <Button
+            size="small"
+            color="error"
+            variant="text"
+            onClick={() => handleDelete((p.row as IOffer).id)}
+          >
             Borrar
           </Button>
         </Stack>
@@ -117,7 +165,13 @@ export default function OffersPage() {
           variant="contained"
           onClick={() => {
             setEditing(null);
-            setForm({ title: "", description: "", imageUrl: "", active: true, order: 0 });
+            setForm({
+              title: "",
+              description: "",
+              imageUrl: "",
+              active: true,
+              order: 0,
+            });
             setOpen(true);
           }}
         >
@@ -127,17 +181,78 @@ export default function OffersPage() {
 
       <CrudTable<IOffer> rows={rows} columns={columns} loading={loading} />
 
-      <CrudDialog open={open} title={editing ? "Editar oferta" : "Nueva oferta"} onClose={() => setOpen(false)} onSave={handleSave}>
-        <TextField label="Título" value={form.title || ""} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
-        <TextField label="Descripción" value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} multiline minRows={3} />
-        <ImageUploader label="Imagen" value={form.imageUrl || ""} onChange={(url) => setForm({ ...form, imageUrl: url || "" })} />
-        <TextField type="number" label="Orden" value={form.order ?? 0} onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} />
-        <FormControlLabel control={<Switch checked={!!form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />} label="Activa" />
-        <TextField type="datetime-local" label="Inicio" value={form.startsAt ? form.startsAt.substring(0, 16) : ""} onChange={(e) => setForm({ ...form, startsAt: e.target.value ? new Date(e.target.value).toISOString() : undefined })} />
-        <TextField type="datetime-local" label="Fin" value={form.endsAt ? form.endsAt.substring(0, 16) : ""} onChange={(e) => setForm({ ...form, endsAt: e.target.value ? new Date(e.target.value).toISOString() : undefined })} />
+      <CrudDialog
+        open={open}
+        title={editing ? "Editar oferta" : "Nueva oferta"}
+        onClose={() => setOpen(false)}
+        onSave={handleSave}
+      >
+        <TextField
+          label="Título"
+          value={form.title || ""}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          required
+        />
+        <TextField
+          label="Descripción"
+          value={form.description || ""}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          multiline
+          minRows={3}
+        />
+        <ImageUploader
+          label="Imagen"
+          value={form.imageUrl || ""}
+          onChange={(url) => setForm({ ...form, imageUrl: url || "" })}
+        />
+        <TextField
+          type="number"
+          label="Orden"
+          value={form.order ?? 0}
+          onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
+        />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!form.active}
+              onChange={(e) => setForm({ ...form, active: e.target.checked })}
+            />
+          }
+          label="Activa"
+        />
+        <TextField
+          type="datetime-local"
+          label="Inicio"
+          value={form.startsAt ? form.startsAt.substring(0, 16) : ""}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              startsAt: e.target.value
+                ? new Date(e.target.value).toISOString()
+                : undefined,
+            })
+          }
+        />
+        <TextField
+          type="datetime-local"
+          label="Fin"
+          value={form.endsAt ? form.endsAt.substring(0, 16) : ""}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              endsAt: e.target.value
+                ? new Date(e.target.value).toISOString()
+                : undefined,
+            })
+          }
+        />
       </CrudDialog>
 
-      <Snackbar open={toast.open} autoHideDuration={2000} onClose={() => setToast({ ...toast, open: false })}>
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={2000}
+        onClose={() => setToast({ ...toast, open: false })}
+      >
         <Alert severity={toast.type} variant="filled">
           {toast.msg}
         </Alert>
@@ -145,4 +260,3 @@ export default function OffersPage() {
     </div>
   );
 }
-

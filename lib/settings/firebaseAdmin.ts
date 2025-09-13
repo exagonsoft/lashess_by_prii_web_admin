@@ -1,57 +1,105 @@
-import * as admin from "firebase-admin";
+// lib/settings/firebaseAdmin.ts
+import { App, cert, getApps, getApp, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getMessaging } from "firebase-admin/messaging";
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { systemSecrets } from "./systemSecrets";
 
-// Lazily initialize Firebase Admin if service account env is present
-function ensureAdmin() {
-  try {
-    const privateKey = (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
-    const projectId = process.env.FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const hasServiceAccount = Boolean(privateKey && projectId && clientEmail);
+let app: App | null = null;
 
-    if (hasServiceAccount && !admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId,
-          clientEmail,
-          privateKey,
+// ✅ Lazily initialize or reuse Firebase Admin
+export function ensureAdmin() {
+  if (!app) {
+    if (getApps().length === 0) {
+      const sa = systemSecrets.firebaseAdmin;
+
+      console.log("🔑 Firebase Admin init debug:", {
+        projectId: sa.project_id,
+        clientEmail: sa.client_email,
+        keySnippet: sa.private_key.substring(0, 30) + "...",
+      });
+
+      app = initializeApp({
+        credential: cert({
+          projectId: sa.project_id,
+          clientEmail: sa.client_email,
+          privateKey: sa.private_key,
         }),
       });
+    } else {
+      app = getApp();
     }
-  } catch {
-    // Swallow init errors; we'll fall back to JOSE verification below
   }
+  return app;
 }
 
+// ✅ Verify ID token with Admin SDK, fallback to JOSE
 export const verifyIdToken = async (token: string) => {
-  // First try Firebase Admin if configured
   try {
     ensureAdmin();
-    if (admin.apps.length) {
-      return await admin.auth().verifyIdToken(token);
+    return await getAuth().verifyIdToken(token);
+  } catch (err) {
+    console.warn("⚠️ Firebase Admin verify failed, falling back to JOSE:", err);
+
+    try {
+      const projectId = systemSecrets.firebaseClient.projectId;
+      if (!projectId) return null;
+
+      const issuer = `https://securetoken.google.com/${projectId}`;
+      const JWKS = createRemoteJWKSet(
+        new URL(
+          "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
+        )
+      );
+      const { payload } = await jwtVerify(token, JWKS, {
+        issuer,
+        audience: projectId,
+      });
+      return payload as Record<string, unknown>;
+    } catch {
+      return null;
     }
-  } catch {
-    // Fall through to JOSE verification
   }
+};
 
-  // Fallback: verify Firebase ID token via Google's JWKS (no service account required)
-  try {
-    const projectId =
-      process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    if (!projectId) return null;
+// ✅ Multicast push notification
+export const sendPushNotification = async (
+  tokens: string[],
+  title: string,
+  body: string,
+  data?: Record<string, string>
+) => {
+  ensureAdmin();
+  if (!tokens?.length) return;
 
-    const issuer = `https://securetoken.google.com/${projectId}`;
-    const JWKS = createRemoteJWKSet(
-      new URL(
-        "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
-      )
+  const response = await getMessaging().sendEachForMulticast({
+    tokens,
+    notification: { title, body },
+    data: data || {},
+    android: { priority: "high" },
+    apns: { payload: { aps: { sound: "default" } } },
+  });
+
+  console.log("✅ Notifications sent:", response.successCount);
+  if (response.failureCount > 0) {
+    console.warn(
+      "⚠️ Failed tokens:",
+      response.responses.filter((r) => !r.success)
     );
-    const { payload } = await jwtVerify(token, JWKS, {
-      issuer,
-      audience: projectId,
-    });
-    return payload as unknown as Record<string, unknown>;
-  } catch {
-    return null;
   }
+};
+
+// ✅ Topic push notification
+export const sendTopicNotification = async (
+  topic: string,
+  title: string,
+  body: string,
+  data?: Record<string, string>
+) => {
+  ensureAdmin();
+  return getMessaging().send({
+    topic,
+    notification: { title, body },
+    data: data || {},
+  });
 };

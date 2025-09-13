@@ -1,12 +1,8 @@
 import { MongoClient } from "mongodb";
+import { systemSecrets } from "./systemSecrets";
 
-const uri = process.env.MONGODB_URI || "mongodb+srv://admin:NNLDUhSHvIuAahI0@lasheesbypriidb.cgsp3qp.mongodb.net/";
-if (!uri) {
-  // Keep strict: do not hardcode secrets. Ask user to set MONGODB_URI.
-  throw new Error("Missing MONGODB_URI env var. Add it to .env.local");
-}
-
-export const mongoDbName = process.env.MONGODB_DB || "lasheesbyprii";
+const uri = systemSecrets.mongoUri;
+export const mongoDbName = systemSecrets.mongoDb;
 
 declare global {
   // eslint-disable-next-line no-var
@@ -16,7 +12,7 @@ declare global {
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
-if (process.env.NODE_ENV === "development") {
+if (!systemSecrets.isProd) {
   if (!global._mongoClientPromise) {
     client = new MongoClient(uri);
     global._mongoClientPromise = client.connect();
@@ -31,4 +27,3 @@ export async function getDb() {
   const c = await clientPromise;
   return c.db(mongoDbName);
 }
-

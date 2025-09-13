@@ -41,6 +41,7 @@ export interface IUser {
   photoUrl?: string;
   provider?: string;
   createdAt?: string;
+  fcmTokens?: string[]; // ✅ array of device tokens
 }
 
 export interface IStylist {

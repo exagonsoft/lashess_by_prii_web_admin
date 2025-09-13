@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { systemSecrets } from "@/lib/settings/systemSecrets";
 
 const allowedOrigins =
-  process.env.NODE_ENV === "production"
+  systemSecrets.isProd
     ? [
         // Origin values must not include path or trailing slash
         "https://www.lashees-by-prii.exagon-soft.com",
