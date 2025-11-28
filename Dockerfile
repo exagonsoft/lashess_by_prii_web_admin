@@ -20,11 +20,14 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder /app/next.config.ts ./next.config.ts
-
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/static ./public/.next/static
+# Copy standalone server
 COPY --from=builder /app/.next/standalone ./
+
+# ⬅️ FIX: put static at ROOT as _next/static
+COPY --from=builder /app/.next/static ./_next/static
+
+# Public folder
+COPY --from=builder /app/public ./public
 
 EXPOSE 8080
 CMD ["server.js"]
