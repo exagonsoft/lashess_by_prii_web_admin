@@ -14,15 +14,17 @@ RUN npm run build
 
 FROM gcr.io/distroless/nodejs24-debian12:nonroot AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production \
     PORT=8080 \
     HOSTNAME=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1
 
+COPY --from=builder /app/next.config.ts ./next.config.ts
+
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./public/.next/static
+COPY --from=builder /app/.next/standalone ./
 
 EXPOSE 8080
-
 CMD ["server.js"]
