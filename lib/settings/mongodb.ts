@@ -4,7 +4,10 @@ import { systemSecrets } from "./systemSecrets";
 const uri = systemSecrets.mongoUri;
 export const mongoDbName = systemSecrets.mongoDb;
 
+// --- EXTENSIÓN DE TYPE DE GLOBALTHIS ---
 declare global {
+  // Agregamos el campo al type globalThis
+  // (globalThis es el tipo real donde viven los globals en Node)
   // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
@@ -13,11 +16,11 @@ let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 if (!systemSecrets.isProd) {
-  if (!global._mongoClientPromise) {
+  if (!globalThis._mongoClientPromise) {
     client = new MongoClient(uri);
-    global._mongoClientPromise = client.connect();
+    globalThis._mongoClientPromise = client.connect();
   }
-  clientPromise = global._mongoClientPromise;
+  clientPromise = globalThis._mongoClientPromise;
 } else {
   client = new MongoClient(uri);
   clientPromise = client.connect();

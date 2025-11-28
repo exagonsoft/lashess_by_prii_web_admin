@@ -12,17 +12,23 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
+# ---- RUNNER ----
 FROM gcr.io/distroless/nodejs24-debian12:nonroot AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production \
     PORT=8080 \
     HOSTNAME=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1
 
+# Copiar solo lo necesario para ejecutar Next.js sin standalone
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./public/.next/static
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/next.config.js ./next.config.js
 
 EXPOSE 8080
 
-CMD ["server.js"]
+# Next.js server sin standalone
+CMD ["node_modules/next/dist/bin/next", "start"]
