@@ -11,6 +11,8 @@ export async function GET() {
     imageUrl?: string;
     active: boolean;
     order: number;
+    type?: string; // ✅ new
+    discount?: number; // ✅ new
     startsAt?: Date;
     endsAt?: Date;
   }>;

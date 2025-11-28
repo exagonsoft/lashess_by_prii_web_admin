@@ -7,13 +7,19 @@ const OfferSchema = new Schema(
     imageUrl: { type: String, default: "" },
     active: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
+    type: {
+      type: String,
+      enum: ["date", "discount", "generic"],
+      default: "generic",
+    },
+    discount: { type: Number },
     startsAt: { type: Date },
     endsAt: { type: Date },
   },
   { timestamps: true }
 );
 
-OfferSchema.index({ order: 1 });
+// ✅ Clear cached model before redefining
+delete models.Offer;
 
-export default models.Offer || model("Offer", OfferSchema);
-
+export default model("Offer", OfferSchema);

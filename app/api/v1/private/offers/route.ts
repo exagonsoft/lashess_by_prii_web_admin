@@ -8,13 +8,17 @@ export async function GET(req: Request) {
   const auth = await requireAdmin(req);
   if (auth) return auth;
   await connectToDatabase();
-  const items = (await Offer.find().sort({ order: 1, createdAt: -1 }).lean()) as unknown as Array<{
+  const items = (await Offer.find()
+    .sort({ order: 1, createdAt: -1 })
+    .lean()) as unknown as Array<{
     _id: unknown;
     title: string;
     description?: string;
     imageUrl?: string;
     active: boolean;
     order: number;
+    type?: string; // ✅ new
+    discount?: number; // ✅ new
     startsAt?: Date;
     endsAt?: Date;
   }>;
@@ -26,6 +30,8 @@ export async function GET(req: Request) {
       imageUrl: o.imageUrl || "",
       active: Boolean(o.active),
       order: o.order,
+      type: o.type || "generic", // ✅ return type
+      discount: o.discount ?? null,
       startsAt: o.startsAt ? new Date(o.startsAt).toISOString() : undefined,
       endsAt: o.endsAt ? new Date(o.endsAt).toISOString() : undefined,
     }))
@@ -35,6 +41,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const auth = await requireAdmin(req);
   if (auth) return auth;
+  
 
   await connectToDatabase();
   const body = await req.json();
@@ -46,7 +53,7 @@ export async function POST(req: Request) {
       "offers",
       "🎉 Nueva oferta disponible",
       body.title || "Revisa las últimas promociones",
-      { route: `/offers/${created._id}` }
+      { route: `/offer-details/${created._id}` }
     );
   } catch (err) {
     console.error("❌ Error sending push notification:", err);
@@ -54,4 +61,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ id: String(created._id) });
 }
-
