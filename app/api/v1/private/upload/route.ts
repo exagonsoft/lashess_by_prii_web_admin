@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { s3 } from "@/lib/settings/s3";
+import { gcs } from "@/lib/settings/gcs";
 import { systemSecrets } from "@/lib/settings/systemSecrets";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
 
 export async function POST(req: Request) {
@@ -16,26 +15,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
     }
 
-    // Convert to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Unique file name
+    const bucket = gcs.bucket(systemSecrets.google_cloud.bucket);
     const key = `services/${randomUUID()}-${file.name}`;
 
-    // Upload (⚡️ no ACL anymore)
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: systemSecrets.cloud.bucket,
-        Key: key,
-        Body: buffer,
-        ContentType: file.type,
-      })
-    );
+    // Upload to GCS (PRIVATE!)
+    const blob = bucket.file(key);
 
-    // Public URL (if bucket policy allows public read)
-    const url = `https://${systemSecrets.cloud.bucket}.s3.${systemSecrets.cloud.region}.amazonaws.com/${key}`;
+    await blob.save(buffer, {
+      contentType: file.type,
+      resumable: false,
+    });
 
-    return NextResponse.json({ url });
+    // Create SIGNED URL
+    const [signedUrl] = await blob.getSignedUrl({
+      action: "read",
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days
+    });
+
+    return NextResponse.json({ url: signedUrl, key });
+
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });

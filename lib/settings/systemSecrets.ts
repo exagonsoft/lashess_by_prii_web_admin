@@ -68,6 +68,19 @@ export const systemSecrets = {
     } as const;
   },
 
+  // Google Cloud
+  get google_cloud() {
+    return {
+      projectId: getEnvVar("GOOGLE_CLOUD_PROJECT_ID", "lashess-by-pri-web-admin"),
+      clientEmail: getEnvVar("GOOGLE_CLIENT_EMAIL", "lashess-by-pri-web-admin@appspot.gserviceaccount.com"),
+      privateKey: getEnvVar(
+        "GOOGLE_CLOUD_PRIVATE_KEY",
+        "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCWaBcbkG9coYSn\nrs2ZfmDLaCWYNDuaxtJOKBLxK3lYi4BFKpuSv4Pwmv5ywEWAqatqZM/ckRW7/ysQ\nheT/lsmp8OwvFEIFb5I+RiZjj4IOlL67C3qsFZQnkwYh4PzHmeBvUncofWVPb+S6\nAq6JEoqb846OAsR9450vn6cVaqIs10cCXeLkfq459PqcuffABb1020Ob01+Y83Kr\nDPva2xy+nf5OiLSXYOMR6iiNF0JOuEx42GqmVPezDjppZNRGSm8cVOo37wAJSoL3\nxcCHKXLI5ASvUxDOhVWyoQ+ehBpEgupZYTRADCz6XRFPn1FJ3gQGYh0H/hYXT+E5\ncovjnJRXAgMBAAECggEACMp7s0Y9ZA4iuURLyxFqaekj7WH8K988EopgFQ2D8atx\nq1lCr5CXDxyYC6/2P/9qv/S1e4BVY2AWLciNqmyvS8oDm/rUowmy5AXon4AXS2/h\nOACDQoSeXLPIs3k5fRce2ZLZ2Rl/LuXs2fxnJCbbyCKzrdQ2lN8VZF+x/dv2L6Ws\nlc/xZWwZGPeDhnVJ66OsMyThBecZ+wy11mVoyeWVCymATsbjwBj6uiBlBjdw1hiW\nSyWQSyYp2FvTZQxwhdVxUOXlTS3HCn2ZW7CqZvEnMobW4Nxxv7qMjsoMLLnVdop2\nYoeZqXXjTGaeCRyymCtciXPHvhXEom7C5cdEW+mi9QKBgQDCHYehU13EL3DrFc5e\nte9qNJ7HoTGyBSi005TwF3prPybumof09THny4bx/2YOVd1Cwet8ud3q3coWTh8o\nDuNyWXe9vO4sRy9uMCbexJUfXVb+Pb70kAxBG/8i2bfHcapcnkNBQWjw7Qoy429t\nWQm0l/hkKhUrNtjusw/lCIOJFQKBgQDGW1QFIFmWIRBxGof+KTmF429Mgm0Fr2oL\nDxcPc7Bti/47KKUevH/+YCSl9Htu4c2+6fYW4KN+aZ8uxk5sRflW5RFbMOooDIOM\nuVEmbDqPqDtc4KG8mIrnydGcpv2Q6z6cbzrxBOISoVy7FiigFOvr7k7o0+rw8fK7\nSR9xaWIquwKBgQCDJp53ojLNFVyOiOoo1XWP5UOOD1vbMl8hZX7QhJxij4WHWoMX\nPv7b5IglQvC6KMtYilrHp3DHedhLH7cvQnfrz4T2fgrRgbsLEJ+CjYFPcqoPFrrI\n0/Zjmz3TVxQzPZnj/83i7gWwGgd1AHNNhwXmrXLWghRRYTpKdFL95LWyTQKBgQCy\nQPqVjMfVWatb6RrTNhrijkvD9uWgmU3z2EDB+xZOq+LxKQqSP5XKdH4awUV3lOZ/\nreMgFgn3HVYXA9EQDiYPh9V8HM4g5XYGrbcWj2ZlGSsXwSq3wGH8AOslGxB9/loK\n3Q6b7+Z2FZqu6i/iBEsrf8JcC61zkAqxcfoWwjyc5wKBgGII4/VSNNEH7oFCJmRv\nfqHBXUpcJKVTR76BGHnscYIQSbivCosTogmdwLUlM2EtHsgRnhOhufEVqVa0oxyv\nEFPwj0Zvea4nZvH+0mxUFTRPJyyMavwLOz+TT5lKqyGtt+cUy7dsjVNJUXw69/p6\ngTMmo8+Oj6ruRNilboFfY1lB\n-----END PRIVATE KEY-----\n"
+      ),
+      bucket: getEnvVar("GOOGLE_CLOUD_BUCKET", "lashess_by_prii_media"),
+    } as const;
+  },
+
   // Firebase Client (frontend-safe)
   firebaseClient: publicConfig.firebaseClient,
 
