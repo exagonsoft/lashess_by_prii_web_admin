@@ -10,6 +10,10 @@ import {
   Chip,
   Switch,
   FormControlLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import CrudTable from "@/app/components/ui/CustomTable";
 import CrudDialog from "@/app/components/ui/CustomDialog";
@@ -20,6 +24,12 @@ import { useAuthToken } from "@/lib/hooks/useAuthToken";
 import { IOffer } from "@/lib/interfaces/types";
 
 const API_BASE = "/api/v1/private/offers";
+
+function formatDateTime(value?: string | Date) {
+  if (!value) return "";
+  const d = typeof value === "string" ? new Date(value) : value;
+  return d.toISOString().slice(0, 16);
+}
 
 export default function OffersPage() {
   const { token } = useAuthToken();
@@ -33,6 +43,9 @@ export default function OffersPage() {
     imageUrl: "",
     active: true,
     order: 0,
+    type: "generic",
+    startsAt: undefined,
+    endsAt: undefined,
   });
   const [toast, setToast] = React.useState({
     open: false,
@@ -76,6 +89,9 @@ export default function OffersPage() {
         imageUrl: "",
         active: true,
         order: 0,
+        type: "generic",
+        startsAt: undefined,
+        endsAt: undefined,
       });
       await load();
       showToast("Guardado", "success");
@@ -99,6 +115,12 @@ export default function OffersPage() {
     { field: "order", headerName: "Orden", width: 100 },
     { field: "title", headerName: "Titulo", flex: 1 },
     { field: "description", headerName: "Descripción", flex: 1 },
+    {
+      field: "type",
+      headerName: "Tipo",
+      width: 120,
+      renderCell: (p) => <Chip size="small" label={p.value} />,
+    },
     {
       field: "active",
       headerName: "Activa",
@@ -171,6 +193,9 @@ export default function OffersPage() {
               imageUrl: "",
               active: true,
               order: 0,
+              type: "generic",
+              startsAt: undefined,
+              endsAt: undefined,
             });
             setOpen(true);
           }}
@@ -211,19 +236,38 @@ export default function OffersPage() {
           value={form.order ?? 0}
           onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
         />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={!!form.active}
-              onChange={(e) => setForm({ ...form, active: e.target.checked })}
-            />
-          }
-          label="Activa"
-        />
+        <FormControl fullWidth>
+          <InputLabel id="offer-type-label">Tipo</InputLabel>
+          <Select
+            labelId="offer-type-label"
+            value={form.type ?? "generic"} // ✅ if null/undefined → "generic"
+            onChange={(e) =>
+              setForm({
+                ...form,
+                type: e.target.value as "generic" | "discount" | "date",
+              })
+            }
+          >
+            <MenuItem value="generic">Genérica</MenuItem>
+            <MenuItem value="discount">Descuento</MenuItem>
+            <MenuItem value="date">Por fecha</MenuItem>
+          </Select>
+        </FormControl>
+        {form.type === "discount" && (
+          <TextField
+            type="number"
+            label="Descuento (%)"
+            value={form.discount ?? ""}
+            onChange={(e) =>
+              setForm({ ...form, discount: Number(e.target.value) })
+            }
+          />
+        )}
+        {/* ✅ Dates always available */}
         <TextField
           type="datetime-local"
           label="Inicio"
-          value={form.startsAt ? form.startsAt.substring(0, 16) : ""}
+          value={formatDateTime(form.startsAt)}
           onChange={(e) =>
             setForm({
               ...form,
@@ -236,7 +280,7 @@ export default function OffersPage() {
         <TextField
           type="datetime-local"
           label="Fin"
-          value={form.endsAt ? form.endsAt.substring(0, 16) : ""}
+          value={formatDateTime(form.endsAt)}
           onChange={(e) =>
             setForm({
               ...form,
@@ -245,6 +289,15 @@ export default function OffersPage() {
                 : undefined,
             })
           }
+        />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!form.active}
+              onChange={(e) => setForm({ ...form, active: e.target.checked })}
+            />
+          }
+          label="Activa"
         />
       </CrudDialog>
 

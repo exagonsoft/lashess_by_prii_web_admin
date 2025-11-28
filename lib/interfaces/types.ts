@@ -87,13 +87,17 @@ export interface ITool {
   active: boolean;
 }
 
+// lib/interfaces/types.ts
 export interface IOffer {
   id: string;
   title: string;
-  description?: string;
-  imageUrl?: string;
+  description: string;
+  imageUrl: string;
   active: boolean;
   order: number;
-  startsAt?: string; // ISO date
-  endsAt?: string; // ISO date
+  type: "generic" | "discount" | "date";
+  discount?: number;
+  startsAt?: string;
+  endsAt?: string;
 }
+
